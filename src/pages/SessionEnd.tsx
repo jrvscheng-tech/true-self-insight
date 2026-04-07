@@ -73,13 +73,19 @@ const SessionEnd = () => {
           {/* Actions */}
           <div className="flex gap-3">
             <button
-              onClick={() => navigate("/home")}
+              onClick={() => {
+                localStorage.setItem("lastSessionTimestamp", Date.now().toString());
+                navigate("/home");
+              }}
               className="flex-1 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-soft btn-press"
             >
               {t("saveClose")}
             </button>
             <button
-              onClick={() => navigate("/journey")}
+              onClick={() => {
+                localStorage.setItem("lastSessionTimestamp", Date.now().toString());
+                navigate("/journey");
+              }}
               className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground font-medium text-sm btn-press hover:bg-secondary transition-colors"
             >
               {t("journeyTitle")}

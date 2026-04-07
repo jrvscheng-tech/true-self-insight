@@ -1,18 +1,50 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useLocale } from "@/lib/i18n";
 import AppHeader from "@/components/AppHeader";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Clock, Lock } from "lucide-react";
+
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getTimeRemaining(lastTimestamp: number) {
+  const elapsed = Date.now() - lastTimestamp;
+  const remaining = COOLDOWN_MS - elapsed;
+  if (remaining <= 0) return null;
+  const hours = Math.floor(remaining / (1000 * 60 * 60));
+  const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+  return { hours, minutes, seconds, total: remaining };
+}
 
 const Home = () => {
   const { t } = useLocale();
   const navigate = useNavigate();
+  const [cooldown, setCooldown] = useState<ReturnType<typeof getTimeRemaining>>(null);
+
+  useEffect(() => {
+    const check = () => {
+      const last = localStorage.getItem("lastSessionTimestamp");
+      if (last) {
+        setCooldown(getTimeRemaining(parseInt(last, 10)));
+      } else {
+        setCooldown(null);
+      }
+    };
+    check();
+    const interval = setInterval(check, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isLocked = cooldown !== null;
 
   const recentThemes = [
     { key: "theme_work" as const, emoji: "💼" },
     { key: "theme_relationship" as const, emoji: "💬" },
     { key: "theme_self" as const, emoji: "🌱" },
   ];
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -32,38 +64,94 @@ const Home = () => {
             </h1>
           </div>
 
-          {/* Main CTA Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-            className="card-glass p-6 space-y-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-accent/20">
-                <Sparkles className="w-5 h-5 text-coral-deep" />
+          {isLocked ? (
+            /* Cooldown State */
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="card-glass p-6 space-y-5"
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-accent/20">
+                  <Lock className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-base font-semibold text-foreground">
+                    {t("cooldownTitle")}
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("cooldownMessage")}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-foreground/80 leading-relaxed flex-1">
-                {t("homeSuggestion")}
-              </p>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-2">
+              {/* Countdown timer */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  {t("cooldownTimer")}
+                </p>
+                <div className="flex justify-center gap-3">
+                  {[
+                    { value: cooldown.hours, label: t("cooldownHours") },
+                    { value: cooldown.minutes, label: t("cooldownMinutes") },
+                    { value: cooldown.seconds, label: t("cooldownSeconds") },
+                  ].map((unit) => (
+                    <div key={unit.label} className="flex flex-col items-center">
+                      <span className="font-mono text-3xl font-bold text-primary tabular-nums">
+                        {pad(unit.value)}
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-0.5">
+                        {unit.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Disabled CTA */}
               <button
-                onClick={() => navigate("/reset?mode=guided")}
-                className="flex-1 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-soft hover:shadow-card transition-all btn-press flex items-center justify-center gap-2"
+                disabled
+                className="w-full px-5 py-3 rounded-xl bg-muted text-muted-foreground font-medium text-sm cursor-not-allowed opacity-60"
               >
-                {t("acceptSuggestion")}
-                <ArrowRight className="w-4 h-4" />
+                {t("startCta")}
               </button>
-              <button
-                onClick={() => navigate("/reset?mode=override")}
-                className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground font-medium text-sm hover:bg-secondary transition-colors btn-press"
-              >
-                {t("overrideSuggestion")}
-              </button>
-            </div>
-          </motion.div>
+            </motion.div>
+          ) : (
+            /* Normal State */
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="card-glass p-6 space-y-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-accent/20">
+                  <Sparkles className="w-5 h-5 text-coral-deep" />
+                </div>
+                <p className="text-sm text-foreground/80 leading-relaxed flex-1">
+                  {t("homeSuggestion")}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => navigate("/reset?mode=guided")}
+                  className="flex-1 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-soft hover:shadow-card transition-all btn-press flex items-center justify-center gap-2"
+                >
+                  {t("acceptSuggestion")}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => navigate("/reset?mode=override")}
+                  className="flex-1 px-5 py-3 rounded-xl border border-border bg-card text-foreground font-medium text-sm hover:bg-secondary transition-colors btn-press"
+                >
+                  {t("overrideSuggestion")}
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           {/* Recent themes */}
           <motion.div
