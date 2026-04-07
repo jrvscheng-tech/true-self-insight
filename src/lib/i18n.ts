@@ -46,6 +46,12 @@ const translations = {
     theme_relationship: "關係",
     theme_self: "自我",
     theme_future: "未來",
+    cooldownTitle: "今天的整理已完成 ✨",
+    cooldownMessage: "明天再回來，讓自己被理解一次",
+    cooldownTimer: "距離下次整理還有",
+    cooldownHours: "小時",
+    cooldownMinutes: "分鐘",
+    cooldownSeconds: "秒",
   },
   "en-US": {
     brand: "Daily Reset",
