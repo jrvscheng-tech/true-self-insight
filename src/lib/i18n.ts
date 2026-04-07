@@ -96,6 +96,12 @@ const translations = {
     theme_relationship: "Relationships",
     theme_self: "Self",
     theme_future: "Future",
+    cooldownTitle: "Today's reset is complete ✨",
+    cooldownMessage: "Come back tomorrow to feel understood again",
+    cooldownTimer: "Next reset available in",
+    cooldownHours: "hours",
+    cooldownMinutes: "minutes",
+    cooldownSeconds: "seconds",
   },
 } as const;
 
